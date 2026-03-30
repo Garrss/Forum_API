@@ -4,29 +4,33 @@
 export const shorthands = undefined;
 
 /**
- * UP: untuk membuat tabel
+ * UP: membuat tabel users
  */
 export const up = (pgm) => {
-  pgm.createTable("users", {
+  pgm.createTable('users', {
     id: {
-      type: "TEXT",
+      type: 'VARCHAR(50)',
       primaryKey: true,
     },
     username: {
-      type: "TEXT",
-      unique: true,
+      type: 'VARCHAR(50)',
       notNull: true,
+      unique: true,
     },
     password: {
-      type: "TEXT",
+      type: 'VARCHAR(255)',
+      notNull: true,
+    },
+    fullname: {
+      type: 'VARCHAR(100)',
       notNull: true,
     },
   });
 };
 
 /**
- * DOWN: untuk rollback (hapus tabel)
+ * DOWN: rollback (hapus tabel)
  */
 export const down = (pgm) => {
-  pgm.dropTable("users");
+  pgm.dropTable('users');
 };

@@ -7,26 +7,29 @@ export const shorthands = undefined;
  * UP: membuat tabel threads
  */
 export const up = (pgm) => {
-  pgm.createTable("threads", {
+  pgm.createTable('threads', {
     id: {
-      type: "TEXT",
+      type: 'VARCHAR(50)',
       primaryKey: true,
     },
     title: {
-      type: "TEXT",
+      type: 'VARCHAR(255)',
       notNull: true,
     },
     body: {
-      type: "TEXT",
+      type: 'TEXT',
       notNull: true,
     },
     owner: {
-      type: "TEXT",
+      type: 'VARCHAR(50)',
       notNull: true,
+      references: 'users(id)',
+      onDelete: 'CASCADE',
     },
-    date: {
-      type: "TIMESTAMP",
-      default: pgm.func("CURRENT_TIMESTAMP"),
+    // eslint-disable-next-line camelcase
+    created_at: {
+      type: 'TIMESTAMP',
+      default: pgm.func('CURRENT_TIMESTAMP'),
     },
   });
 };
@@ -35,5 +38,5 @@ export const up = (pgm) => {
  * DOWN: rollback (hapus tabel)
  */
 export const down = (pgm) => {
-  pgm.dropTable("threads");
+  pgm.dropTable('threads');
 };

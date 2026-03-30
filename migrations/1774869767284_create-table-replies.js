@@ -7,34 +7,38 @@ export const shorthands = undefined;
  * UP: membuat tabel replies
  */
 export const up = (pgm) => {
-  pgm.createTable("replies", {
+  pgm.createTable('replies', {
     id: {
-      type: "TEXT",
+      type: 'VARCHAR(50)',
       primaryKey: true,
     },
-    comment_id: {
-      type: "TEXT",
-      notNull: true,
-      references: "comments(id)",
-      onDelete: "CASCADE",
-    },
     content: {
-      type: "TEXT",
+      type: 'TEXT',
       notNull: true,
     },
+    // eslint-disable-next-line camelcase
+    comment_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: 'comments(id)',
+      onDelete: 'CASCADE',
+    },
+    // eslint-disable-next-line camelcase
     owner: {
-      type: "TEXT",
+      type: 'VARCHAR(50)',
       notNull: true,
-      references: "users(id)",
-      onDelete: "CASCADE",
+      references: 'users(id)',
+      onDelete: 'CASCADE',
     },
-    date: {
-      type: "TIMESTAMP",
-      default: pgm.func("CURRENT_TIMESTAMP"),
-    },
-    is_delete: {
-      type: "BOOLEAN",
+    // eslint-disable-next-line camelcase
+    is_deleted: {
+      type: 'BOOLEAN',
       default: false,
+    },
+    // eslint-disable-next-line camelcase
+    created_at: {
+      type: 'TIMESTAMP',
+      default: pgm.func('CURRENT_TIMESTAMP'),
     },
   });
 };
@@ -43,5 +47,5 @@ export const up = (pgm) => {
  * DOWN: rollback (hapus tabel)
  */
 export const down = (pgm) => {
-  pgm.dropTable("replies");
+  pgm.dropTable('replies');
 };

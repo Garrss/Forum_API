@@ -7,33 +7,35 @@ export const shorthands = undefined;
  * UP: membuat tabel comments
  */
 export const up = (pgm) => {
-  pgm.createTable("comments", {
+  pgm.createTable('comments', {
     id: {
-      type: "TEXT",
+      type: 'TEXT',
       primaryKey: true,
     },
+    // eslint-disable-next-line camelcase
     thread_id: {
-      type: "TEXT",
+      type: 'TEXT',
       notNull: true,
-      references: "threads(id)",
-      onDelete: "CASCADE",
+      references: 'threads(id)',
+      onDelete: 'CASCADE',
     },
     content: {
-      type: "TEXT",
+      type: 'TEXT',
       notNull: true,
     },
     owner: {
-      type: "TEXT",
+      type: 'TEXT',
       notNull: true,
-      references: "users(id)",
-      onDelete: "CASCADE",
+      references: 'users(id)',
+      onDelete: 'CASCADE',
     },
     date: {
-      type: "TIMESTAMP",
-      default: pgm.func("CURRENT_TIMESTAMP"),
+      type: 'TIMESTAMP',
+      default: pgm.func('CURRENT_TIMESTAMP'),
     },
+    // eslint-disable-next-line camelcase
     is_delete: {
-      type: "BOOLEAN",
+      type: 'BOOLEAN',
       default: false,
     },
   });
@@ -43,5 +45,5 @@ export const up = (pgm) => {
  * DOWN: rollback (hapus tabel)
  */
 export const down = (pgm) => {
-  pgm.dropTable("comments");
+  pgm.dropTable('comments');
 };
