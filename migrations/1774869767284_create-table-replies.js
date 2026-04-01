@@ -23,7 +23,6 @@ export const up = (pgm) => {
       references: 'comments(id)',
       onDelete: 'CASCADE',
     },
-    // eslint-disable-next-line camelcase
     owner: {
       type: 'VARCHAR(50)',
       notNull: true,
@@ -31,14 +30,13 @@ export const up = (pgm) => {
       onDelete: 'CASCADE',
     },
     // eslint-disable-next-line camelcase
-    is_deleted: {
+    is_delete: {
       type: 'BOOLEAN',
       default: false,
     },
-    // eslint-disable-next-line camelcase
-    created_at: {
-      type: 'TIMESTAMP',
-      default: pgm.func('CURRENT_TIMESTAMP'),
+    date: {
+      type: 'TIMESTAMPTZ',
+      default: pgm.func('NOW()'),
     },
   });
 };

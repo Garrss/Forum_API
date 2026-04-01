@@ -9,12 +9,12 @@ export const shorthands = undefined;
 export const up = (pgm) => {
   pgm.createTable('comments', {
     id: {
-      type: 'TEXT',
+      type: 'VARCHAR(50)',
       primaryKey: true,
     },
     // eslint-disable-next-line camelcase
     thread_id: {
-      type: 'TEXT',
+      type: 'VARCHAR(50)',
       notNull: true,
       references: 'threads(id)',
       onDelete: 'CASCADE',
@@ -24,14 +24,14 @@ export const up = (pgm) => {
       notNull: true,
     },
     owner: {
-      type: 'TEXT',
+      type: 'VARCHAR(50)',
       notNull: true,
       references: 'users(id)',
       onDelete: 'CASCADE',
     },
     date: {
-      type: 'TIMESTAMP',
-      default: pgm.func('CURRENT_TIMESTAMP'),
+      type: 'TIMESTAMPTZ',
+      default: pgm.func('NOW()'),
     },
     // eslint-disable-next-line camelcase
     is_delete: {

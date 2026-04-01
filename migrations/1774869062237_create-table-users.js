@@ -18,11 +18,11 @@ export const up = (pgm) => {
       unique: true,
     },
     password: {
-      type: 'VARCHAR(255)',
+      type: 'TEXT',
       notNull: true,
     },
     fullname: {
-      type: 'VARCHAR(100)',
+      type: 'TEXT',
       notNull: true,
     },
   });

@@ -13,7 +13,7 @@ export const up = (pgm) => {
       primaryKey: true,
     },
     title: {
-      type: 'VARCHAR(255)',
+      type: 'TEXT',
       notNull: true,
     },
     body: {
@@ -26,10 +26,9 @@ export const up = (pgm) => {
       references: 'users(id)',
       onDelete: 'CASCADE',
     },
-    // eslint-disable-next-line camelcase
-    created_at: {
-      type: 'TIMESTAMP',
-      default: pgm.func('CURRENT_TIMESTAMP'),
+    date: {
+      type: 'TIMESTAMPTZ',
+      default: pgm.func('NOW()'),
     },
   });
 };
