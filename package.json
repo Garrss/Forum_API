@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "start:dev": "nodemon src/app.js",
     "test": "vitest --run",
-    "test:watch": "vitest --watch",
+    "test:watch": "vitest --watch --coverage",
     "migrate": "node-pg-migrate",
     "migrate:test": "node-pg-migrate --envPath .test.env",
     "lint": "eslint ./"
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9.39.4",
     "eslint-config-dicodingacademy": "^0.9.5",
     "globals": "^17.4.0",
