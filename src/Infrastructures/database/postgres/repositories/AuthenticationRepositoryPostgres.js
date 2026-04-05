@@ -1,14 +1,17 @@
 import pool from '../pool.js';
-import { AuthenticationRepository } from '../../../../Domains/authentications/AuthenticationRepository.js';
-import { InvariantError } from '../../../../Commons/exceptions/InvariantError.js';
+import AuthenticationRepository from '../../../../Domains/authentications/AuthenticationRepository.js';
+import InvariantError from '../../../../Commons/exceptions/InvariantError.js';
 
 export class AuthenticationRepositoryPostgres extends AuthenticationRepository {
   async addToken(token) {
-    await pool.query('INSERT INTO authentications VALUES($1)', [token]);
+    await pool.query('INSERT INTO authentications(token) VALUES($1)', [token]);
   }
 
   async checkTokenAvailability(token) {
-    const result = await pool.query('SELECT token FROM authentication WHERE token=$1', [token]);
+    const result = await pool.query(
+      'SELECT token FROM authentications WHERE token=$1',
+      [token],
+    );
     if (!result.rowCount) throw new InvariantError('Refresh token not found');
   }
 

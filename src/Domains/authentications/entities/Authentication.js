@@ -14,3 +14,5 @@ export class Authentication {
     }
   }
 }
+
+export default Authentication;

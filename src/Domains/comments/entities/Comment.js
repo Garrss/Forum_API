@@ -1,4 +1,4 @@
-export default class Comment {
+export class Comment {
   constructor({ content, owner, threadId }) {
     this._verify({ content, owner, threadId });
     this.content = content;
@@ -11,7 +11,9 @@ export default class Comment {
       throw new Error('COMMENT.NOT_CONTAIN_NEEDED_PROPERTY');
     }
     if (typeof content !== 'string') {
-      throw new Error('COMMENT.NOT_MEET_DATA_TYPES_SPECIFICATION');
+      throw new Error('COMMENT.NOT_MEET_DATA_TYPE_SPECIFICATION');
     }
   }
 }
+
+export default Comment;

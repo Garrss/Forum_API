@@ -1,13 +1,14 @@
-export default class Reply {
-  constructor({ content, owner, commentId }) {
-    this._verify({ content, owner, commentId });
+export class Reply {
+  constructor({ content, owner, commentId, threadId }) {
+    this._verify({ content, owner, commentId, threadId });
     this.content = content;
     this.owner = owner;
-    this.commentsId = commentId;
+    this.commentId = commentId;
+    this.threadId = threadId;
   }
 
-  _verify({ content, owner, commentId }) {
-    if (!content || !owner || !commentId) {
+  _verify({ content, owner, commentId, threadId }) {
+    if (!content || !owner || !commentId || !threadId) {
       throw new Error('REPLY.NOT_CONTAIN_NEEDED_PROPERTY');
     }
     if (typeof content !== 'string') {
@@ -15,3 +16,5 @@ export default class Reply {
     }
   }
 }
+
+export default Reply;
