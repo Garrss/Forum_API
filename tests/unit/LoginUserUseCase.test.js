@@ -11,13 +11,11 @@ describe('LoginUserUseCase', () => {
   it('should throw AuthenticationError when password is wrong', async () => {
     const hashedPassword = await bcrypt.hash('correctpassword', 10);
     const mockUserRepo = {
-      getUserByUsername: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'user-1',
-          username: 'johndoe',
-          password: hashedPassword,
-        }),
+      getUserByUsername: vi.fn().mockResolvedValue({
+        id: 'user-1',
+        username: 'johndoe',
+        password: hashedPassword,
+      }),
     };
     const mockAuthRepo = { addToken: vi.fn() };
 
@@ -25,22 +23,22 @@ describe('LoginUserUseCase', () => {
       userRepository: mockUserRepo,
       authenticationRepository: mockAuthRepo,
     });
+
     await expect(
       useCase.execute({ username: 'johndoe', password: 'wrongpassword' }),
     ).rejects.toThrow(AuthenticationError);
+
     expect(mockAuthRepo.addToken).not.toHaveBeenCalled();
   });
 
   it('should return accessToken and refreshToken on success', async () => {
     const hashedPassword = await bcrypt.hash('secret123', 10);
     const mockUserRepo = {
-      getUserByUsername: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'user-1',
-          username: 'johndoe',
-          password: hashedPassword,
-        }),
+      getUserByUsername: vi.fn().mockResolvedValue({
+        id: 'user-1',
+        username: 'johndoe',
+        password: hashedPassword,
+      }),
     };
     const mockAuthRepo = { addToken: vi.fn().mockResolvedValue() };
 
@@ -48,6 +46,7 @@ describe('LoginUserUseCase', () => {
       userRepository: mockUserRepo,
       authenticationRepository: mockAuthRepo,
     });
+
     const result = await useCase.execute({
       username: 'johndoe',
       password: 'secret123',

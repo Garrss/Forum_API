@@ -1,26 +1,26 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import pool from '../../src/Infrastructures/database/postgres/pool.js';
+import { pool } from '../helpers/testPool.js';
 import { CommentRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/CommentRepositoryPostgres.js';
 import { NotFoundError } from '../../src/Commons/exceptions/NotFoundError.js';
 import { AuthorizationError } from '../../src/Commons/exceptions/AuthorizationError.js';
 
 describe('CommentRepositoryPostgres', () => {
   beforeAll(async () => {
+    await pool.query("DELETE FROM comments WHERE id='comment-int-1'");
+    await pool.query("DELETE FROM threads WHERE id='thread-comment-test'");
+    await pool.query("DELETE FROM users WHERE id='user-comment-test'");
     await pool.query(
-      "INSERT INTO users(id,username,password,fullname) VALUES('user-comment-test','commentuser','hashed','Comment User') ON CONFLICT DO NOTHING",
+      "INSERT INTO users(id,username,password,fullname) VALUES('user-comment-test','commentuser','hashed','Comment User')",
     );
     await pool.query(
-      "INSERT INTO threads(id,title,body,owner) VALUES('thread-comment-test','Test Thread','Test Body','user-comment-test') ON CONFLICT DO NOTHING",
+      "INSERT INTO threads(id,title,body,owner) VALUES('thread-comment-test','Test Thread','Test Body','user-comment-test')",
     );
   });
 
   afterAll(async () => {
-    await pool.query(
-      "DELETE FROM comments WHERE thread_id='thread-comment-test'",
-    );
+    await pool.query("DELETE FROM comments WHERE id='comment-int-1'");
     await pool.query("DELETE FROM threads WHERE id='thread-comment-test'");
     await pool.query("DELETE FROM users WHERE id='user-comment-test'");
-    await pool.end();
   });
 
   it('should add comment and return id, content, owner', async () => {

@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import Thread from '../../Domains/threads/entities/Thread.js';
 
-export default class AddThreadUseCase {
+export class AddThreadUseCase {
   constructor({ threadRepository }) {
     this._threadRepository = threadRepository;
   }

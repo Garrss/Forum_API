@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import Comment from '../../Domains/comments/entities/Comment.js';
 
-export default class AddCommentUseCase {
+export class AddCommentUseCase {
   constructor({ commentRepository, threadRepository }) {
     this._commentRepository = commentRepository;
     this._threadRepository = threadRepository;

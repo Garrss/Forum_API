@@ -1,4 +1,4 @@
-export default class DeleteCommentUseCase {
+export class DeleteCommentUseCase {
   constructor({ commentRepository, threadRepository }) {
     this._commentRepository = commentRepository;
     this._threadRepository = threadRepository;

@@ -13,7 +13,7 @@ export class LoginUserUseCase {
     const user = await this._userRepository.getUserByUsername(username);
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new AuthenticationError('Wrong password');
+    if (!match) throw new AuthenticationError('AUTHENTICATION.WRONG_PASSWORD');
 
     const accessToken = jwt.sign(
       { id: user.id, username: user.username },

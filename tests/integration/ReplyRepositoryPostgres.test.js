@@ -1,30 +1,31 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import pool from '../../src/Infrastructures/database/postgres/pool.js';
+import { pool } from '../helpers/testPool.js';
 import { ReplyRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/ReplyRepositoryPostgres.js';
 import { NotFoundError } from '../../src/Commons/exceptions/NotFoundError.js';
 import { AuthorizationError } from '../../src/Commons/exceptions/AuthorizationError.js';
 
 describe('ReplyRepositoryPostgres', () => {
   beforeAll(async () => {
+    await pool.query("DELETE FROM replies WHERE id='reply-int-1'");
+    await pool.query("DELETE FROM comments WHERE id='comment-reply-test'");
+    await pool.query("DELETE FROM threads WHERE id='thread-reply-test'");
+    await pool.query("DELETE FROM users WHERE id='user-reply-test'");
     await pool.query(
-      "INSERT INTO users(id,username,password,fullname) VALUES('user-reply-test','replyuser','hashed','Reply User') ON CONFLICT DO NOTHING",
+      "INSERT INTO users(id,username,password,fullname) VALUES('user-reply-test','replyuser','hashed','Reply User')",
     );
     await pool.query(
-      "INSERT INTO threads(id,title,body,owner) VALUES('thread-reply-test','Reply Thread','Body','user-reply-test') ON CONFLICT DO NOTHING",
+      "INSERT INTO threads(id,title,body,owner) VALUES('thread-reply-test','Reply Thread','Body','user-reply-test')",
     );
     await pool.query(
-      "INSERT INTO comments(id,thread_id,owner,content) VALUES('comment-reply-test','thread-reply-test','user-reply-test','A comment') ON CONFLICT DO NOTHING",
+      "INSERT INTO comments(id,thread_id,owner,content) VALUES('comment-reply-test','thread-reply-test','user-reply-test','A comment')",
     );
   });
 
   afterAll(async () => {
-    await pool.query(
-      "DELETE FROM replies WHERE comment_id='comment-reply-test'",
-    );
+    await pool.query("DELETE FROM replies WHERE id='reply-int-1'");
     await pool.query("DELETE FROM comments WHERE id='comment-reply-test'");
     await pool.query("DELETE FROM threads WHERE id='thread-reply-test'");
     await pool.query("DELETE FROM users WHERE id='user-reply-test'");
-    await pool.end();
   });
 
   it('should add reply and return id, content, owner', async () => {
@@ -65,10 +66,7 @@ describe('ReplyRepositoryPostgres', () => {
   it('should throw AuthorizationError when owner does not match', async () => {
     const repo = new ReplyRepositoryPostgres();
     await expect(
-      repo.verifyReplyOwner({
-        replyId: 'reply-int-1',
-        owner: 'wrong-user',
-      }),
+      repo.verifyReplyOwner({ replyId: 'reply-int-1', owner: 'wrong-user' }),
     ).rejects.toThrow(AuthorizationError);
   });
 

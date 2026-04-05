@@ -32,4 +32,19 @@ describe('LogoutUserUseCase', () => {
     await useCase.execute({ refreshToken: 'valid-token' });
     expect(mockAuthRepo.deleteToken).toHaveBeenCalledWith('valid-token');
   });
+
+  it('should throw when refreshToken is not provided', async () => {
+    const mockAuthRepo = {
+      checkTokenAvailability: vi.fn(),
+      deleteToken: vi.fn(),
+    };
+
+    const useCase = new LogoutUserUseCase({
+      authenticationRepository: mockAuthRepo,
+    });
+
+    await expect(useCase.execute({})).rejects.toThrow(
+      'Refresh token is required',
+    );
+  });
 });

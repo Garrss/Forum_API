@@ -1,14 +1,19 @@
-import { describe, it, expect, afterAll } from 'vitest';
-import pool from '../../src/Infrastructures/database/postgres/pool.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { pool } from '../helpers/testPool.js';
 import { AuthenticationRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/AuthenticationRepositoryPostgres.js';
 import { InvariantError } from '../../src/Commons/exceptions/InvariantError.js';
 
 describe('AuthenticationRepositoryPostgres', () => {
+  beforeAll(async () => {
+    await pool.query(
+      "DELETE FROM authentications WHERE token LIKE 'test-token%'",
+    );
+  });
+
   afterAll(async () => {
     await pool.query(
       "DELETE FROM authentications WHERE token LIKE 'test-token%'",
     );
-    await pool.end();
   });
 
   it('should add token to database', async () => {

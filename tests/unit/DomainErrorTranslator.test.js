@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import DomainErrorTranslator from '../../src/Commons/exceptions/DomainErrorTranslator.js';
-import { InvariantError } from '../../src/Commons/exceptions/InvariantError.js';
+import InvariantError from '../../src/Commons/exceptions/InvariantError.js';
 
 describe('DomainErrorTranslator', () => {
   it('should translate known domain errors to InvariantError', () => {

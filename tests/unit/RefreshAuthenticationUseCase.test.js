@@ -44,4 +44,18 @@ describe('RefreshAuthenticationUseCase', () => {
     );
     expect(decoded.username).toBe('johndoe');
   });
+
+  it('should throw when refresh token is invalid (jwt verify fails)', async () => {
+    const mockAuthRepo = {
+      checkTokenAvailability: vi.fn().mockResolvedValue(),
+    };
+
+    const useCase = new RefreshAuthenticationUseCase({
+      authenticationRepository: mockAuthRepo,
+    });
+
+    await expect(
+      useCase.execute({ refreshToken: 'invalid-token' }),
+    ).rejects.toThrow('Refresh token is invalid');
+  });
 });

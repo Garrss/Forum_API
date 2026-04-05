@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 import DomainErrorTranslator from '../../Commons/exceptions/DomainErrorTranslator.js';
+
 import { UsersPlugin } from './plugins/UsersPlugin.js';
 import { AuthenticationsPlugin } from './plugins/AuthenticationsPlugin.js';
 import { ThreadsPlugin } from './plugins/ThreadsPlugin.js';
@@ -10,7 +11,7 @@ export const createServer = (container) => {
   const app = express();
   app.use(express.json());
 
-  // Auth middleware — attaches decoded token to req.auth
+  // Auth middleware
   app.use((req, _res, next) => {
     const { authorization } = req.headers;
     if (authorization?.startsWith('Bearer ')) {
@@ -20,7 +21,7 @@ export const createServer = (container) => {
           process.env.ACCESS_TOKEN_KEY,
         );
       } catch {
-        // Invalid token — route handlers enforce auth if required
+        // Token invalid — protected routes will reject via requireAuth
       }
     }
     next();
@@ -34,9 +35,12 @@ export const createServer = (container) => {
   app.use((err, _req, res, _next) => {
     const translated = DomainErrorTranslator.translate(err);
     const statusCode = translated.statusCode || 500;
+    const message =
+      statusCode === 500 ? 'Internal server error' : translated.message;
+
     res.status(statusCode).json({
-      status: 'fail',
-      message: translated.message || 'Internal server error',
+      status: statusCode >= 500 ? 'error' : 'fail',
+      message,
     });
   });
 
