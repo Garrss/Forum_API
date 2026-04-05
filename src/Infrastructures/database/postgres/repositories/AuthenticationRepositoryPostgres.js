@@ -12,7 +12,7 @@ export class AuthenticationRepositoryPostgres extends AuthenticationRepository {
       'SELECT token FROM authentications WHERE token=$1',
       [token],
     );
-    if (!result.rowCount) throw new InvariantError('Refresh token not found');
+    if (!result.rowCount) throw new InvariantError('refresh token tidak ditemukan di database');
   }
 
   async deleteToken(token) {

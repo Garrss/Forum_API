@@ -9,51 +9,51 @@ const DomainErrorTranslator = {
 DomainErrorTranslator._directories = {
   // Users
   'USER.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError(
-    'Username, password, and fullname are required',
+    'tidak dapat membuat user baru karena properti yang dibutuhkan tidak ada',
   ),
   'USER.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError(
-    'Username, password, and fullname must be strings',
+    'tidak dapat membuat user baru karena tipe data tidak sesuai',
   ),
   'USER.USERNAME_LIMIT_CHAR': new InvariantError(
-    'Username cannot exceed 50 characters',
+    'tidak dapat membuat user baru karena karakter username melebihi batas',
   ),
   'USER.USERNAME_CONTAIN_RESTRICTED_CHARACTER': new InvariantError(
-    'Username can only contain letters, numbers, and underscores',
+    'tidak dapat membuat user baru karena username mengandung karakter terlarang',
   ),
 
   // Authentications
   'AUTHENTICATION.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError(
-    'Access token and refresh token are required',
+    'tidak dapat membuat authentication karena properti yang dibutuhkan tidak ada',
   ),
   'AUTHENTICATION.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError(
-    'Access token and refresh token must be strings',
+    'tidak dapat membuat authentication karena tipe data tidak sesuai',
   ),
   'AUTHENTICATION.WRONG_PASSWORD': new InvariantError(
-    'Username or password is incorrect',
+    'kredensial yang Anda berikan salah',
   ),
 
   // Threads
   'THREAD.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError(
-    'Thread requires title and body',
+    'tidak dapat membuat thread baru karena properti yang dibutuhkan tidak ada',
   ),
   'THREAD.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError(
-    'Thread title and body must be strings',
+    'tidak dapat membuat thread baru karena tipe data tidak sesuai',
   ),
 
   // Comments
   'COMMENT.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError(
-    'Comment requires content',
+    'tidak dapat membuat comment baru karena properti yang dibutuhkan tidak ada',
   ),
   'COMMENT.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError(
-    'Comment content must be a string',
+    'tidak dapat membuat comment baru karena tipe data tidak sesuai',
   ),
 
   // Replies
   'REPLY.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError(
-    'Reply requires content',
+    'tidak dapat membuat reply baru karena properti yang dibutuhkan tidak ada',
   ),
   'REPLY.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError(
-    'Reply content must be a string',
+    'tidak dapat membuat reply baru karena tipe data tidak sesuai',
   ),
 };
 

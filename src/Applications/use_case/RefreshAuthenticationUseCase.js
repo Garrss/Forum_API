@@ -7,20 +7,25 @@ export class RefreshAuthenticationUseCase {
   }
 
   async execute({ refreshToken }) {
-    await this._authenticationRepository.checkTokenAvailability(refreshToken);
+    if (!refreshToken) {
+      throw new InvariantError(
+        'tidak dapat memperbarui authentication karena properti yang dibutuhkan tidak ada',
+      );
+    }
 
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
     } catch {
-      throw new InvariantError('Refresh token is invalid');
+      throw new InvariantError('refresh token tidak valid');
     }
 
-    const { id, username } = decoded;
+    await this._authenticationRepository.checkTokenAvailability(refreshToken);
+
     const accessToken = jwt.sign(
-      { id, username },
+      { id: decoded.id, username: decoded.username },
       process.env.ACCESS_TOKEN_KEY,
-      { expiresIn: Number(process.env.ACCESS_TOKEN_AGE) },
+      { expiresIn: Number(process.env.ACCESS_TOKEN_AGE) || 3000 },
     );
 
     return { accessToken };

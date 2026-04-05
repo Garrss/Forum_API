@@ -86,7 +86,7 @@ describe('GetThreadDetailUseCase', () => {
           replies: [
             {
               id: 'reply-1',
-              content: '**reply has been deleted**',
+              content: '**balasan telah dihapus**',
               date: '2021-08-08T07:59:48.766Z',
               username: 'dicoding',
             },
@@ -102,7 +102,7 @@ describe('GetThreadDetailUseCase', () => {
           id: 'comment-2',
           username: 'dicoding',
           date: '2021-08-08T07:26:21.338Z',
-          content: '**comment has been deleted**',
+          content: '**komentar telah dihapus**',
           replies: [],
         },
       ],

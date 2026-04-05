@@ -7,7 +7,7 @@ import { DeleteReplyUseCase } from '../../../Applications/use_case/DeleteReplyUs
 
 const requireAuth = (req, res, next) => {
   if (!req.auth)
-    return res.status(401).json({ status: 'fail', message: 'Unauthorized' });
+    return res.status(401).json({ status: 'fail', message: 'Missing authentication' });
   return next();
 };
 

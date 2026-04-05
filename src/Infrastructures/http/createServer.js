@@ -21,7 +21,7 @@ export const createServer = (container) => {
           process.env.ACCESS_TOKEN_KEY,
         );
       } catch {
-        // Token invalid — protected routes will reject via requireAuth
+        // Token invalid
       }
     }
     next();

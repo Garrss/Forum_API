@@ -6,7 +6,10 @@ export class LogoutUserUseCase {
   }
 
   async execute({ refreshToken }) {
-    if (!refreshToken) throw new InvariantError('Refresh token is required');
+    if (!refreshToken) {
+      throw new InvariantError('tidak dapat menghapus authentication karena properti yang dibutuhkan tidak ada');
+    }
+
     await this._authenticationRepository.checkTokenAvailability(refreshToken);
     await this._authenticationRepository.deleteToken(refreshToken);
   }

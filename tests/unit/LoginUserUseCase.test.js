@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { LoginUserUseCase } from '../../src/Applications/use_case/LoginUserUseCase.js';
 import AuthenticationError from '../../src/Commons/exceptions/AuthenticationError.js';
+import NotFoundError from '../../src/Commons/exceptions/NotFoundError.js';
 import bcrypt from 'bcrypt';
 
 process.env.ACCESS_TOKEN_KEY = 'test_access_secret';
@@ -55,5 +56,99 @@ describe('LoginUserUseCase', () => {
     expect(mockAuthRepo.addToken).toHaveBeenCalledOnce();
     expect(result.accessToken).toBeDefined();
     expect(result.refreshToken).toBeDefined();
+  });
+
+  it('should throw InvariantError when username is missing', async () => {
+    const useCase = new LoginUserUseCase({
+      userRepository: {},
+      authenticationRepository: {},
+    });
+
+    await expect(useCase.execute({ password: 'secret' })).rejects.toThrow(
+      'tidak dapat membuat authentication',
+    );
+  });
+
+  it('should throw InvariantError when password is missing', async () => {
+    const useCase = new LoginUserUseCase({
+      userRepository: {},
+      authenticationRepository: {},
+    });
+
+    await expect(useCase.execute({ username: 'johndoe' })).rejects.toThrow(
+      'tidak dapat membuat authentication',
+    );
+  });
+
+  it('should throw InvariantError when user not found', async () => {
+    const mockUserRepo = {
+      getUserByUsername: vi
+        .fn()
+        .mockRejectedValue(new NotFoundError('not found')),
+    };
+
+    const mockAuthRepo = {
+      addToken: vi.fn(),
+    };
+
+    const useCase = new LoginUserUseCase({
+      userRepository: mockUserRepo,
+      authenticationRepository: mockAuthRepo,
+    });
+
+    await expect(
+      useCase.execute({ username: 'unknown', password: 'secret' }),
+    ).rejects.toThrow('kredensial yang Anda berikan salah');
+  });
+
+  it('should rethrow error when error is not NotFoundError', async () => {
+    const mockUserRepo = {
+      getUserByUsername: vi
+        .fn()
+        .mockRejectedValue(new Error('unexpected error')),
+    };
+
+    const mockAuthRepo = {
+      addToken: vi.fn(),
+    };
+
+    const useCase = new LoginUserUseCase({
+      userRepository: mockUserRepo,
+      authenticationRepository: mockAuthRepo,
+    });
+
+    await expect(
+      useCase.execute({ username: 'johndoe', password: 'secret' }),
+    ).rejects.toThrow('unexpected error');
+  });
+
+  it('should use default expiresIn when ACCESS_TOKEN_AGE is not set', async () => {
+    delete process.env.ACCESS_TOKEN_AGE; // ❗ hapus env
+
+    const hashedPassword = await bcrypt.hash('secret123', 10);
+
+    const mockUserRepo = {
+      getUserByUsername: vi.fn().mockResolvedValue({
+        id: 'user-1',
+        username: 'johndoe',
+        password: hashedPassword,
+      }),
+    };
+
+    const mockAuthRepo = {
+      addToken: vi.fn().mockResolvedValue(),
+    };
+
+    const useCase = new LoginUserUseCase({
+      userRepository: mockUserRepo,
+      authenticationRepository: mockAuthRepo,
+    });
+
+    const result = await useCase.execute({
+      username: 'johndoe',
+      password: 'secret123',
+    });
+
+    expect(result.accessToken).toBeDefined();
   });
 });

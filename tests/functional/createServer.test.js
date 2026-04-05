@@ -107,7 +107,7 @@ describe('POST /authentications', () => {
       username: 'testuser',
       password: 'wrongpassword',
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
     expect(res.body.status).toBe('fail');
   });
 

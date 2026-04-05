@@ -6,7 +6,7 @@ import NotFoundError from '../../../../Commons/exceptions/NotFoundError.js';
 export class UserRepositoryPostgres extends UserRepository {
   async checkUsernameAvailability(username) {
     const result = await pool.query('SELECT id FROM users WHERE username=$1', [username]);
-    if (result.rowCount) throw new InvariantError('Username already taken');
+    if (result.rowCount) throw new InvariantError('username tidak tersedia');
   }
 
   async addUser({ id, username, password, fullname }) {

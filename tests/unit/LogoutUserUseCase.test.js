@@ -44,7 +44,7 @@ describe('LogoutUserUseCase', () => {
     });
 
     await expect(useCase.execute({})).rejects.toThrow(
-      'Refresh token is required',
+      'tidak dapat menghapus authentication karena properti yang dibutuhkan tidak ada',
     );
   });
 });

@@ -15,12 +15,12 @@ export class GetThreadDetailUseCase {
       id: comment.id,
       username: comment.username,
       date: comment.date,
-      content: comment.is_delete ? '**comment has been deleted**' : comment.content,
+      content: comment.is_delete ? '**komentar telah dihapus**' : comment.content,
       replies: replies
         .filter((r) => r.comment_id === comment.id)
         .map((r) => ({
           id: r.id,
-          content: r.is_delete ? '**reply has been deleted**' : r.content,
+          content: r.is_delete ? '**balasan telah dihapus**' : r.content,
           date: r.date,
           username: r.username,
         })),
