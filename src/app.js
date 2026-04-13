@@ -5,6 +5,7 @@ import { AuthenticationRepositoryPostgres } from './Infrastructures/database/pos
 import { ThreadRepositoryPostgres } from './Infrastructures/database/postgres/repositories/ThreadRepositoryPostgres.js';
 import { CommentRepositoryPostgres } from './Infrastructures/database/postgres/repositories/CommentRepositoryPostgres.js';
 import { ReplyRepositoryPostgres } from './Infrastructures/database/postgres/repositories/ReplyRepositoryPostgres.js';
+import { LikeRepositoryPostgres } from './Infrastructures/database/postgres/repositories/LikeRepositoryPostgres.js';
 
 const container = {
   userRepository: new UserRepositoryPostgres(),
@@ -12,6 +13,7 @@ const container = {
   threadRepository: new ThreadRepositoryPostgres(),
   commentRepository: new CommentRepositoryPostgres(),
   replyRepository: new ReplyRepositoryPostgres(),
+  likeRepository: new LikeRepositoryPostgres(),
 };
 
 const app = createServer(container);

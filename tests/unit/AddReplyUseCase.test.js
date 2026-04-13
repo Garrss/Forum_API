@@ -16,6 +16,7 @@ describe('AddReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({
         content: 'a reply',
@@ -24,6 +25,10 @@ describe('AddReplyUseCase', () => {
         threadId: 'bad-thread',
       }),
     ).rejects.toThrow('Thread not found');
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('bad-thread');
+
+    expect(mockCommentRepo.checkCommentExists).not.toHaveBeenCalled();
     expect(mockReplyRepo.addReply).not.toHaveBeenCalled();
   });
 
@@ -41,6 +46,7 @@ describe('AddReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({
         content: 'a reply',
@@ -49,20 +55,26 @@ describe('AddReplyUseCase', () => {
         threadId: 'thread-1',
       }),
     ).rejects.toThrow('Comment not found');
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('thread-1');
+
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith(
+      'bad-comment',
+    );
+
     expect(mockReplyRepo.addReply).not.toHaveBeenCalled();
   });
 
   it('should add reply correctly when thread and comment exist', async () => {
     const mockThreadRepo = { checkThreadExists: vi.fn().mockResolvedValue() };
     const mockCommentRepo = { checkCommentExists: vi.fn().mockResolvedValue() };
+
     const mockReplyRepo = {
-      addReply: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'reply-1',
-          content: 'a reply',
-          owner: 'user-1',
-        }),
+      addReply: vi.fn().mockResolvedValue({
+        id: 'reply-UNIQUE_ID',
+        content: 'a reply',
+        owner: 'user-1',
+      }),
     };
 
     const useCase = new AddReplyUseCase({
@@ -70,14 +82,31 @@ describe('AddReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
-    const result = await useCase.execute({
+
+    const payload = {
       content: 'a reply',
       owner: 'user-1',
       commentId: 'comment-1',
       threadId: 'thread-1',
-    });
+    };
 
-    expect(mockReplyRepo.addReply).toHaveBeenCalledOnce();
-    expect(result.content).toBe('a reply');
+    const result = await useCase.execute(payload);
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('thread-1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith(
+      'comment-1',
+    );
+    expect(mockReplyRepo.addReply).toHaveBeenCalled();
+
+    const calledArg = mockReplyRepo.addReply.mock.calls[0][0];
+    expect(calledArg).toMatchObject({
+      content: payload.content,
+      owner: payload.owner,
+      commentId: payload.commentId,
+      threadId: payload.threadId,
+    });
+    expect(calledArg.id).toMatch(/^reply-/);
+
+    expect(result.id).toBe('reply-UNIQUE_ID');
   });
 });

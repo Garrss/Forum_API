@@ -21,6 +21,7 @@ describe('DeleteReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({
         replyId: 'reply-1',
@@ -29,6 +30,12 @@ describe('DeleteReplyUseCase', () => {
         owner: 'user-1',
       }),
     ).rejects.toThrow('Thread not found');
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('bad-thread');
+
+    expect(mockCommentRepo.checkCommentExists).not.toHaveBeenCalled();
+    expect(mockReplyRepo.checkReplyExists).not.toHaveBeenCalled();
+    expect(mockReplyRepo.verifyReplyOwner).not.toHaveBeenCalled();
     expect(mockReplyRepo.deleteReply).not.toHaveBeenCalled();
   });
 
@@ -50,6 +57,7 @@ describe('DeleteReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({
         replyId: 'reply-1',
@@ -58,6 +66,14 @@ describe('DeleteReplyUseCase', () => {
         owner: 'user-1',
       }),
     ).rejects.toThrow('Comment not found');
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('thread-1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith(
+      'bad-comment',
+    );
+
+    expect(mockReplyRepo.checkReplyExists).not.toHaveBeenCalled();
+    expect(mockReplyRepo.verifyReplyOwner).not.toHaveBeenCalled();
     expect(mockReplyRepo.deleteReply).not.toHaveBeenCalled();
   });
 
@@ -77,6 +93,7 @@ describe('DeleteReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({
         replyId: 'reply-1',
@@ -85,6 +102,17 @@ describe('DeleteReplyUseCase', () => {
         owner: 'wrong-user',
       }),
     ).rejects.toThrow(AuthorizationError);
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('thread-1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith(
+      'comment-1',
+    );
+    expect(mockReplyRepo.checkReplyExists).toHaveBeenCalledWith('reply-1');
+    expect(mockReplyRepo.verifyReplyOwner).toHaveBeenCalledWith({
+      replyId: 'reply-1',
+      owner: 'wrong-user',
+    });
+
     expect(mockReplyRepo.deleteReply).not.toHaveBeenCalled();
   });
 
@@ -102,12 +130,24 @@ describe('DeleteReplyUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await useCase.execute({
       replyId: 'reply-1',
       commentId: 'comment-1',
       threadId: 'thread-1',
       owner: 'user-1',
     });
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('thread-1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith(
+      'comment-1',
+    );
+    expect(mockReplyRepo.checkReplyExists).toHaveBeenCalledWith('reply-1');
+    expect(mockReplyRepo.verifyReplyOwner).toHaveBeenCalledWith({
+      replyId: 'reply-1',
+      owner: 'user-1',
+    });
+
     expect(mockReplyRepo.deleteReply).toHaveBeenCalledWith('reply-1');
   });
 });

@@ -6,6 +6,7 @@ import { AuthenticationRepositoryPostgres } from '../../src/Infrastructures/data
 import { ThreadRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/ThreadRepositoryPostgres.js';
 import { CommentRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/CommentRepositoryPostgres.js';
 import { ReplyRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/ReplyRepositoryPostgres.js';
+import { LikeRepositoryPostgres } from '../../src/Infrastructures/database/postgres/repositories/LikeRepositoryPostgres.js';
 import { pool } from '../helpers/testPool.js';
 
 const container = {
@@ -14,27 +15,23 @@ const container = {
   threadRepository: new ThreadRepositoryPostgres(),
   commentRepository: new CommentRepositoryPostgres(),
   replyRepository: new ReplyRepositoryPostgres(),
+  likeRepository: new LikeRepositoryPostgres(),
 };
 
 const app = createServer(container);
 
-// Shared state across tests
 let accessToken;
 let refreshToken;
 let threadId;
 let commentId;
 let replyId;
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 const registerUser = (payload) => request(app).post('/users').send(payload);
-
 const loginUser = (payload) =>
   request(app).post('/authentications').send(payload);
 
-// ─── Setup / Teardown ────────────────────────────────────────────────────────
-
 beforeAll(async () => {
+  await pool.query('DELETE FROM comment_likes');
   await pool.query('DELETE FROM replies');
   await pool.query('DELETE FROM comments');
   await pool.query('DELETE FROM threads');
@@ -45,6 +42,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await pool.query('DELETE FROM comment_likes');
   await pool.query('DELETE FROM replies');
   await pool.query('DELETE FROM comments');
   await pool.query('DELETE FROM threads');
@@ -97,12 +95,11 @@ describe('POST /authentications', () => {
     expect(res.body.status).toBe('success');
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
-
     accessToken = res.body.data.accessToken;
     refreshToken = res.body.data.refreshToken;
   });
 
-  it('should return 400 when credentials are wrong', async () => {
+  it('should return 401 when password is wrong', async () => {
     const res = await loginUser({
       username: 'testuser',
       password: 'wrongpassword',
@@ -115,7 +112,6 @@ describe('POST /authentications', () => {
     const res = await request(app)
       .post('/authentications')
       .send({ password: 'secret123' });
-
     expect(res.status).toBe(400);
     expect(res.body.status).toBe('fail');
   });
@@ -124,7 +120,6 @@ describe('POST /authentications', () => {
     const res = await request(app)
       .post('/authentications')
       .send({ username: 'testuser' });
-
     expect(res.status).toBe(400);
     expect(res.body.status).toBe('fail');
   });
@@ -208,7 +203,6 @@ describe('POST /threads', () => {
     expect(res.body.status).toBe('success');
     expect(res.body.data.addedThread.id).toBeDefined();
     expect(res.body.data.addedThread.title).toBe('Test Thread');
-
     threadId = res.body.data.addedThread.id;
   });
 
@@ -258,7 +252,6 @@ describe('POST /threads/:threadId/comments', () => {
     expect(res.body.status).toBe('success');
     expect(res.body.data.addedComment.id).toBeDefined();
     expect(res.body.data.addedComment.content).toBe('A comment');
-
     commentId = res.body.data.addedComment.id;
   });
 
@@ -281,6 +274,50 @@ describe('POST /threads/:threadId/comments', () => {
   });
 });
 
+// ─── Likes ────────────────────────────────────────────────────────────────────
+
+describe('PUT /threads/:threadId/comments/:commentId/likes', () => {
+  it('should return 401 when no token', async () => {
+    const res = await request(app).put(
+      `/threads/${threadId}/comments/${commentId}/likes`,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('should like a comment and return 200', async () => {
+    const res = await request(app)
+      .put(`/threads/${threadId}/comments/${commentId}/likes`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+  });
+
+  it('should unlike a comment when liked again and return 200', async () => {
+    const res = await request(app)
+      .put(`/threads/${threadId}/comments/${commentId}/likes`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+  });
+
+  it('should show likeCount in thread detail', async () => {
+    // Like the comment first
+    await request(app)
+      .put(`/threads/${threadId}/comments/${commentId}/likes`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    const res = await request(app).get(`/threads/${threadId}`);
+    expect(res.status).toBe(200);
+    const comment = res.body.data.thread.comments.find(
+      (c) => c.id === commentId,
+    );
+    expect(comment).toBeDefined();
+    expect(comment.likeCount).toBeDefined();
+    expect(typeof comment.likeCount).toBe('number');
+    expect(comment.likeCount).toBe(1);
+  });
+});
+
 // ─── Replies ─────────────────────────────────────────────────────────────────
 
 describe('POST /threads/:threadId/comments/:commentId/replies', () => {
@@ -300,7 +337,6 @@ describe('POST /threads/:threadId/comments/:commentId/replies', () => {
     expect(res.body.status).toBe('success');
     expect(res.body.data.addedReply.id).toBeDefined();
     expect(res.body.data.addedReply.content).toBe('A reply');
-
     replyId = res.body.data.addedReply.id;
   });
 
@@ -334,7 +370,6 @@ describe('DELETE /threads/:threadId/comments/:commentId/replies/:replyId', () =>
   });
 
   it('should return 403 when not the owner', async () => {
-    // Register and login a second user
     await registerUser({
       username: 'seconduser',
       password: 'pass123',
@@ -416,26 +451,58 @@ describe('DELETE /threads/:threadId/comments/:commentId', () => {
 // ─── Additional Coverage Tests ───────────────────────────────────────────────
 
 describe('Additional coverage for createServer', () => {
+  let coverageThreadId;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/threads')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ title: 'Coverage Thread', body: 'Coverage body' });
+    coverageThreadId = res.body.data.addedThread.id;
+  });
+
   it('should handle invalid token gracefully (cover jwt catch)', async () => {
     const res = await request(app)
       .post('/threads')
       .set('Authorization', 'Bearer invalidtoken')
       .send({ title: 'Test', body: 'Test body' });
-
     expect(res.status).toBe(401);
   });
 
   it('should work without authorization header (cover no auth branch)', async () => {
-    const res = await request(app).get(`/threads/${threadId}`);
-
+    const res = await request(app).get(`/threads/${coverageThreadId}`);
     expect(res.status).toBe(200);
+  });
+
+  it('should return 404 when liking comment on non-existent thread', async () => {
+    const res = await request(app)
+      .put('/threads/thread-nonexistent/comments/comment-nonexistent/likes')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(404);
+    expect(res.body.status).toBe('fail');
+  });
+
+  it('should return 404 when liking non-existent comment', async () => {
+    const res = await request(app)
+      .put(`/threads/${coverageThreadId}/comments/comment-nonexistent/likes`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(404);
+    expect(res.body.status).toBe('fail');
   });
 
   it('should return 500 when unexpected error occurs (cover global error)', async () => {
     const fakeApp = createServer({
-      ...container,
+      userRepository: container.userRepository,
+      authenticationRepository: container.authenticationRepository,
+      commentRepository: container.commentRepository,
+      replyRepository: container.replyRepository,
+      likeRepository: container.likeRepository,
       threadRepository: {
         addThread: () => {
+          throw new Error('unexpected error');
+        },
+        checkThreadExists: () => Promise.resolve(),
+        getThreadById: () => {
           throw new Error('unexpected error');
         },
       },

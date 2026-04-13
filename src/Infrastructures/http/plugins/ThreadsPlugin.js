@@ -4,6 +4,7 @@ import { AddCommentUseCase } from '../../../Applications/use_case/AddCommentUseC
 import { DeleteCommentUseCase } from '../../../Applications/use_case/DeleteCommentUseCase.js';
 import { AddReplyUseCase } from '../../../Applications/use_case/AddReplyUseCase.js';
 import { DeleteReplyUseCase } from '../../../Applications/use_case/DeleteReplyUseCase.js';
+import { ToggleLikeUseCase } from '../../../Applications/use_case/ToggleLikeUseCase.js';
 
 const requireAuth = (req, res, next) => {
   if (!req.auth)
@@ -34,6 +35,7 @@ export const ThreadsPlugin = (app, container) => {
         threadRepository: container.threadRepository,
         commentRepository: container.commentRepository,
         replyRepository: container.replyRepository,
+        likeRepository: container.likeRepository,
       });
       const thread = await useCase.execute(req.params.threadId);
       res.json({ status: 'success', data: { thread } });
@@ -76,6 +78,29 @@ export const ThreadsPlugin = (app, container) => {
         await useCase.execute({
           commentId: req.params.commentId,
           threadId: req.params.threadId,
+          owner: req.auth.id,
+        });
+        res.json({ status: 'success' });
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  // Likes - toggle like/unlike
+  app.put(
+    '/threads/:threadId/comments/:commentId/likes',
+    requireAuth,
+    async (req, res, next) => {
+      try {
+        const useCase = new ToggleLikeUseCase({
+          likeRepository: container.likeRepository,
+          commentRepository: container.commentRepository,
+          threadRepository: container.threadRepository,
+        });
+        await useCase.execute({
+          threadId: req.params.threadId,
+          commentId: req.params.commentId,
           owner: req.auth.id,
         });
         res.json({ status: 'success' });

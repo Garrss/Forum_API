@@ -29,11 +29,14 @@ describe('LoginUserUseCase', () => {
       useCase.execute({ username: 'johndoe', password: 'wrongpassword' }),
     ).rejects.toThrow(AuthenticationError);
 
+    expect(mockUserRepo.getUserByUsername).toHaveBeenCalledWith('johndoe');
+
     expect(mockAuthRepo.addToken).not.toHaveBeenCalled();
   });
 
   it('should return accessToken and refreshToken on success', async () => {
     const hashedPassword = await bcrypt.hash('secret123', 10);
+
     const mockUserRepo = {
       getUserByUsername: vi.fn().mockResolvedValue({
         id: 'user-1',
@@ -41,7 +44,10 @@ describe('LoginUserUseCase', () => {
         password: hashedPassword,
       }),
     };
-    const mockAuthRepo = { addToken: vi.fn().mockResolvedValue() };
+
+    const mockAuthRepo = {
+      addToken: vi.fn().mockResolvedValue(),
+    };
 
     const useCase = new LoginUserUseCase({
       userRepository: mockUserRepo,
@@ -53,7 +59,12 @@ describe('LoginUserUseCase', () => {
       password: 'secret123',
     });
 
+    expect(mockUserRepo.getUserByUsername).toHaveBeenCalledWith('johndoe');
+
     expect(mockAuthRepo.addToken).toHaveBeenCalledOnce();
+
+    expect(mockAuthRepo.addToken).toHaveBeenCalledWith(result.refreshToken);
+
     expect(result.accessToken).toBeDefined();
     expect(result.refreshToken).toBeDefined();
   });
@@ -99,6 +110,8 @@ describe('LoginUserUseCase', () => {
     await expect(
       useCase.execute({ username: 'unknown', password: 'secret' }),
     ).rejects.toThrow('kredensial yang Anda berikan salah');
+
+    expect(mockUserRepo.getUserByUsername).toHaveBeenCalledWith('unknown');
   });
 
   it('should rethrow error when error is not NotFoundError', async () => {
@@ -120,10 +133,12 @@ describe('LoginUserUseCase', () => {
     await expect(
       useCase.execute({ username: 'johndoe', password: 'secret' }),
     ).rejects.toThrow('unexpected error');
+
+    expect(mockUserRepo.getUserByUsername).toHaveBeenCalledWith('johndoe');
   });
 
   it('should use default expiresIn when ACCESS_TOKEN_AGE is not set', async () => {
-    delete process.env.ACCESS_TOKEN_AGE; // ❗ hapus env
+    delete process.env.ACCESS_TOKEN_AGE;
 
     const hashedPassword = await bcrypt.hash('secret123', 10);
 
@@ -150,5 +165,19 @@ describe('LoginUserUseCase', () => {
     });
 
     expect(result.accessToken).toBeDefined();
+    expect(mockUserRepo.getUserByUsername).toHaveBeenCalledWith('johndoe');
+  });
+
+  it('should not call repository when username is missing', async () => {
+    const mockUserRepo = { getUserByUsername: vi.fn() };
+
+    const useCase = new LoginUserUseCase({
+      userRepository: mockUserRepo,
+      authenticationRepository: {},
+    });
+
+    await expect(useCase.execute({ password: 'secret' })).rejects.toThrow();
+
+    expect(mockUserRepo.getUserByUsername).not.toHaveBeenCalled();
   });
 });

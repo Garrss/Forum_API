@@ -17,9 +17,18 @@ describe('DeleteCommentUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
+
     await expect(
       useCase.execute({ commentId: 'c1', threadId: 't1', owner: 'wrong-user' }),
     ).rejects.toThrow(AuthorizationError);
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('t1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith('c1');
+    expect(mockCommentRepo.verifyCommentOwner).toHaveBeenCalledWith({
+      commentId: 'c1',
+      owner: 'wrong-user',
+    });
+
     expect(mockCommentRepo.deleteComment).not.toHaveBeenCalled();
   });
 
@@ -35,7 +44,20 @@ describe('DeleteCommentUseCase', () => {
       commentRepository: mockCommentRepo,
       threadRepository: mockThreadRepo,
     });
-    await useCase.execute({ commentId: 'c1', threadId: 't1', owner: 'user-1' });
+
+    await useCase.execute({
+      commentId: 'c1',
+      threadId: 't1',
+      owner: 'user-1',
+    });
+
+    expect(mockThreadRepo.checkThreadExists).toHaveBeenCalledWith('t1');
+    expect(mockCommentRepo.checkCommentExists).toHaveBeenCalledWith('c1');
+    expect(mockCommentRepo.verifyCommentOwner).toHaveBeenCalledWith({
+      commentId: 'c1',
+      owner: 'user-1',
+    });
+
     expect(mockCommentRepo.deleteComment).toHaveBeenCalledWith('c1');
   });
 });
