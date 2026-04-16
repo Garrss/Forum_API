@@ -1,0 +1,80 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: garrss
+          POSTGRES_PASSWORD: awaacantik
+          POSTGRES_DB: forum_api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -q -d forum_api_test -U garrss"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          PGHOST=localhost
+          PGUSER=garrss
+          PGDATABASE=forum_api_test
+          PGPASSWORD=awaacantik
+          PGPORT=5432
+          ACCESS_TOKEN_KEY=${{ secrets.ACCESS_TOKEN_KEY }}
+          REFRESH_TOKEN_KEY=${{ secrets.REFRESH_TOKEN_KEY }}
+          ACCESS_TOKEN_AGE=${{ secrets.ACCESS_TOKEN_AGE }}
+          EOF
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U garrss; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+
+      - name: Run database migrations
+        run: npm run migrate up
+        env:
+          PGHOST: localhost
+          PGUSER: garrss
+          PGDATABASE: forum_api_test
+          PGPASSWORD: awaacantik
+          PGPORT: 5432
+
+      - name: Run all tests
+        run: npm test
+        env:
+          PGHOST: localhost
+          PGUSER: garrss
+          PGDATABASE: forum_api_test
+          PGPASSWORD: awaacantik
+          PGPORT: 5432
+          ACCESS_TOKEN_KEY: ${{ secrets.ACCESS_TOKEN_KEY }}
+          REFRESH_TOKEN_KEY: ${{ secrets.REFRESH_TOKEN_KEY }}
+          ACCESS_TOKEN_AGE: ${{ secrets.ACCESS_TOKEN_AGE }}

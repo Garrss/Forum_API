@@ -8,8 +8,8 @@
     "start:dev": "nodemon src/app.js",
     "test": "vitest --run",
     "test:watch": "vitest --watch --coverage",
-    "migrate": "node-pg-migrate",
-    "migrate:test": "node-pg-migrate --envPath .test.env",
+    "migrate": "node-pg-migrate -m migrations",
+    "migrate:test": "node-pg-migrate up -m migrations",
     "lint": "eslint ./"
   },
   "keywords": [],
