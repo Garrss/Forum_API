@@ -9,7 +9,6 @@ let _pool = null;
 
 const getPool = () => {
   if (!_pool) {
-    // Support both DATABASE_URL and individual PG* variables
     if (process.env.DATABASE_URL) {
       _pool = new Pool({ connectionString: process.env.DATABASE_URL });
     } else {
