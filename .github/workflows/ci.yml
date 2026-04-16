@@ -20,10 +20,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U garrss"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="pg_isready -q -d forum_api_test -U garrss"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout repository
@@ -40,14 +40,23 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "PGHOST=localhost" >> .env
-          echo "PGUSER=garrss" >> .env
-          echo "PGDATABASE=forum_api_test" >> .env
-          echo "PGPASSWORD=awaacantik" >> .env
-          echo "PGPORT=5432" >> .env
-          echo "ACCESS_TOKEN_KEY=${{ secrets.ACCESS_TOKEN_KEY }}" >> .env
-          echo "REFRESH_TOKEN_KEY=${{ secrets.REFRESH_TOKEN_KEY }}" >> .env
-          echo "ACCESS_TOKEN_AGE=${{ secrets.ACCESS_TOKEN_AGE }}" >> .env
+          cat > .env << EOF
+          PGHOST=localhost
+          PGUSER=garrss
+          PGDATABASE=forum_api_test
+          PGPASSWORD=awaacantik
+          PGPORT=5432
+          ACCESS_TOKEN_KEY=${{ secrets.ACCESS_TOKEN_KEY }}
+          REFRESH_TOKEN_KEY=${{ secrets.REFRESH_TOKEN_KEY }}
+          ACCESS_TOKEN_AGE=${{ secrets.ACCESS_TOKEN_AGE }}
+          EOF
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U garrss; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
 
       - name: Run database migrations
         run: npm run migrate up
