@@ -1,0 +1,3 @@
+name = "forum-api"
+main = "src/app.js"
+compatibility_date = "2026-04-16"
