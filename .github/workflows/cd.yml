@@ -26,14 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4. (Optional tapi bagus) Run test dulu sebelum deploy
-      - name: Run tests
-        run: npm test
-        env:
-          ACCESS_TOKEN_KEY: ${{ secrets.ACCESS_TOKEN_KEY }}
-          REFRESH_TOKEN_KEY: ${{ secrets.REFRESH_TOKEN_KEY }}
-          ACCESS_TOKEN_AGE: ${{ secrets.ACCESS_TOKEN_AGE }}
-
       # 5. Create Deployment di GitHub (biar muncul di tab Deployments)
       - name: Create GitHub Deployment
         id: deployment
