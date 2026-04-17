@@ -1,16 +1,33 @@
 /* eslint-disable no-unused-vars */
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import 'dotenv/config';
+import rateLimit from 'express-rate-limit';
+import { config } from 'dotenv';
 import DomainErrorTranslator from '../../Commons/exceptions/DomainErrorTranslator.js';
-
 import { UsersPlugin } from './plugins/UsersPlugin.js';
 import { AuthenticationsPlugin } from './plugins/AuthenticationsPlugin.js';
 import { ThreadsPlugin } from './plugins/ThreadsPlugin.js';
 
+config();
+
+// Rate limiter: max 90 requests per minute for /threads and sub-paths
+const threadsRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 90, // max 90 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'fail',
+    message: 'Too many requests. Please try again later.',
+  },
+});
+
 export const createServer = (container) => {
   const app = express();
   app.use(express.json());
+
+  // Apply rate limit ONLY to /threads and everything under it
+  app.use('/threads', threadsRateLimiter);
 
   // Auth middleware
   app.use((req, _res, next) => {
@@ -22,7 +39,7 @@ export const createServer = (container) => {
           process.env.ACCESS_TOKEN_KEY,
         );
       } catch {
-        // Token invalid
+        // Invalid token — protected routes reject via requireAuth
       }
     }
     next();
@@ -36,12 +53,15 @@ export const createServer = (container) => {
   app.use((err, _req, res, _next) => {
     const translated = DomainErrorTranslator.translate(err);
     const statusCode = translated.statusCode || 500;
-    const message =
-      statusCode === 500 ? 'Internal server error' : translated.message;
+
+    if (statusCode === 500) {
+      console.error('[SERVER ERROR]', err);
+    }
 
     res.status(statusCode).json({
       status: statusCode >= 500 ? 'error' : 'fail',
-      message,
+      message:
+        statusCode === 500 ? 'Internal server error' : translated.message,
     });
   });
 
