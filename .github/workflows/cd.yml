@@ -1,65 +1,24 @@
 name: Continuous Deployment
 
 on:
+  pull_request:
   push:
-    branches:
-      - main
-      - master
+    branches: [main]
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Ambil source codes
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v5
+      - name: Test
+        run: |
+          npm install
+          npm run test
 
-      # 2. Setup Node.js
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      # 3. Install dependency
-      - name: Install dependencies
-        run: npm ci
-
-      # 5. Create Deployment di GitHub (biar muncul di tab Deployments)
-      - name: Create GitHub Deployment
-        id: deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const response = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-              environment: "production",
-              auto_merge: false,
-              required_contexts: []
-            });
-            core.setOutput("deployment_id", response.data.id);
-
-      # 6. Trigger deploy ke Render
-      - name: Trigger Render Deploy
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-      # 7. Tunggu beberapa detik (biar deploy jalan)
-      - name: Wait for deployment
-        run: sleep 30
-
-      # 8. Set status SUCCESS ke GitHub
-      - name: Set Deployment Status Success
-        uses: actions/github-script@v7
-        if: success()
-        with:
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.deployment.outputs.deployment_id }},
-              state: "success",
-              environment_url: "https://forum-api-3rvp.onrender.com"
-            });
+      - name: Deploy
+        # Only run this step if the branch is main
+        if: github.ref == 'refs/heads/main'
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          curl "$deploy_url"
