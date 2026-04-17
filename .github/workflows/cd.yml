@@ -1,0 +1,73 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Ambil source codes
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. Install dependency
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. (Optional tapi bagus) Run test dulu sebelum deploy
+      - name: Run tests
+        run: npm test
+        env:
+          ACCESS_TOKEN_KEY: ${{ secrets.ACCESS_TOKEN_KEY }}
+          REFRESH_TOKEN_KEY: ${{ secrets.REFRESH_TOKEN_KEY }}
+          ACCESS_TOKEN_AGE: ${{ secrets.ACCESS_TOKEN_AGE }}
+
+      # 5. Create Deployment di GitHub (biar muncul di tab Deployments)
+      - name: Create GitHub Deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: "production",
+              auto_merge: false,
+              required_contexts: []
+            });
+            core.setOutput("deployment_id", response.data.id);
+
+      # 6. Trigger deploy ke Render
+      - name: Trigger Render Deploy
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+      # 7. Tunggu beberapa detik (biar deploy jalan)
+      - name: Wait for deployment
+        run: sleep 30
+
+      # 8. Set status SUCCESS ke GitHub
+      - name: Set Deployment Status Success
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.deployment_id }},
+              state: "success",
+              environment_url: "https://forum-api-3rvp.onrender.com"
+            });
