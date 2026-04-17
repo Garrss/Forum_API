@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Ambil source code
+      # 1. Ambil source codes
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -19,8 +19,8 @@ jobs:
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       # 3. Install dependency
       - name: Install dependencies
