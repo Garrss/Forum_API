@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import rateLimit from 'express-rate-limit';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { config } from 'dotenv';
 import DomainErrorTranslator from '../../Commons/exceptions/DomainErrorTranslator.js';
 import { UsersPlugin } from './plugins/UsersPlugin.js';
@@ -10,24 +10,38 @@ import { ThreadsPlugin } from './plugins/ThreadsPlugin.js';
 
 config();
 
-// Rate limiter: max 90 requests per minute for /threads and sub-paths
-const threadsRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 90, // max 90 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    status: 'fail',
-    message: 'Too many requests. Please try again later.',
-  },
+// 90 requests per 60 seconds = 1 request per ~667ms
+// Using sliding window — no burst allowed
+const rateLimiter = new RateLimiterMemory({
+  points: 90, // 90 requests
+  duration: 60, // per 60 seconds
+  blockDuration: 60, // block for 60 seconds after limit exceeded
 });
+
+const threadsRateLimiterMiddleware = async (req, res, next) => {
+  try {
+    // Use IP as key — trust proxy for Render
+    const key = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+    await rateLimiter.consume(key);
+    next();
+  } catch {
+    res.status(429).json({
+      status: 'fail',
+      message: 'Too many requests. Please try again after a minute.',
+    });
+  }
+};
 
 export const createServer = (container) => {
   const app = express();
+
+  // Required for Render/Railway to correctly get client IP
+  app.set('trust proxy', 1);
+
   app.use(express.json());
 
-  // Apply rate limit ONLY to /threads and everything under it
-  app.use('/threads', threadsRateLimiter);
+  // Apply rate limit ONLY to /threads and all sub-paths
+  app.use('/threads', threadsRateLimiterMiddleware);
 
   // Auth middleware
   app.use((req, _res, next) => {
@@ -39,7 +53,7 @@ export const createServer = (container) => {
           process.env.ACCESS_TOKEN_KEY,
         );
       } catch {
-        // Invalid token — protected routes reject via requireAuth
+        // Invalid token
       }
     }
     next();

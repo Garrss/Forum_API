@@ -24,7 +24,8 @@
     "jsonwebtoken": "^9.0.3",
     "nanoid": "^5.1.7",
     "node-pg-migrate": "^8.0.4",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "rate-limiter-flexible": "^11.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
