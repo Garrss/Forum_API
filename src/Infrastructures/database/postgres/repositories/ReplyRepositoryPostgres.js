@@ -23,14 +23,18 @@ export class ReplyRepositoryPostgres extends ReplyRepository {
     const result = await pool.query('SELECT owner FROM replies WHERE id=$1', [
       replyId,
     ]);
-    if (result.rows[0].owner !== owner)
+    if (!result.rowCount) throw new NotFoundError('Reply not found');
+    if (result.rows[0].owner !== owner) {
       throw new AuthorizationError('You are not the reply owner');
+    }
   }
 
   async deleteReply(replyId) {
-    await pool.query('UPDATE replies SET is_delete=true WHERE id=$1', [
-      replyId,
-    ]);
+    const result = await pool.query(
+      'UPDATE replies SET is_delete=true WHERE id=$1 RETURNING id',
+      [replyId],
+    );
+    if (!result.rowCount) throw new NotFoundError('Reply not found');
   }
 
   async getRepliesByCommentIds(commentIds) {
