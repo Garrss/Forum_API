@@ -23,14 +23,27 @@ export class CommentRepositoryPostgres extends CommentRepository {
     const result = await pool.query('SELECT owner FROM comments WHERE id=$1', [
       commentId,
     ]);
-    if (result.rows[0].owner !== owner)
+
+    if (!result.rowCount) {
+      throw new NotFoundError('Comment not found');
+    }
+
+    const comment = result.rows[0];
+
+    if (comment.owner !== owner) {
       throw new AuthorizationError('You are not the comment owner');
+    }
   }
 
   async deleteComment(commentId) {
-    await pool.query('UPDATE comments SET is_delete=true WHERE id=$1', [
-      commentId,
-    ]);
+    const result = await pool.query(
+      'UPDATE comments SET is_delete=true WHERE id=$1 RETURNING id',
+      [commentId],
+    );
+
+    if (!result.rowCount) {
+      throw new NotFoundError('Comment not found');
+    }
   }
 
   async getCommentsByThreadId(threadId) {
