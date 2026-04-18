@@ -18,13 +18,22 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 const getClientIp = (req) => {
-  // On Render, real IP is in x-forwarded-for header
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
-    // x-forwarded-for can be comma-separated list — take the FIRST one (real client)
-    return forwarded.split(',')[0].trim();
+    const ips = forwarded.split(',').map((ip) => ip.trim());
+    // Get the first non-private IP
+    const publicIp = ips.find((ip) => {
+      return (
+        !ip.startsWith('10.') &&
+        !ip.startsWith('172.') &&
+        !ip.startsWith('192.168.') &&
+        ip !== '127.0.0.1' &&
+        ip !== '::1'
+      );
+    });
+    return publicIp || ips[0];
   }
-  return req.ip || req.connection.remoteAddress || 'unknown';
+  return req.ip || 'shared';
 };
 
 const threadsRateLimiterMiddleware = async (req, res, next) => {
