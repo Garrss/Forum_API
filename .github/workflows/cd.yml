@@ -2,21 +2,28 @@ name: Continuous Deployment
 
 on:
   push:
-    branches: [main]
-
-permissions:
-  contents: read
-  deployments: write
+    branches:
+      - master
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Deploy to Render
-        env:
-          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: |
-          curl -X POST "$deploy_url"
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/forum-api
+            git pull origin master
+            npm install --production
+            npm run migrate up
+            pm2 restart forum-api || pm2 start src/app.js --name forum-api
+            pm2 save
