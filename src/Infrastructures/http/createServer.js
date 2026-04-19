@@ -14,25 +14,18 @@ config();
 const rateLimiter = new RateLimiterMemory({
   points: 90,
   duration: 60,
-  blockDuration: 60,
 });
 
 const getClientIp = (req) => {
-  // On Render, real IP is in x-forwarded-for header
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    // x-forwarded-for can be comma-separated list — take the FIRST one (real client)
-    return forwarded.split(',')[0].trim();
-  }
-  return req.ip || req.connection.remoteAddress || 'unknown';
+  return req.ip;
 };
 
 const threadsRateLimiterMiddleware = async (req, res, next) => {
   try {
-    const key = getClientIp(req);
-    await rateLimiter.consume(key);
+    await rateLimiter.consume(req.ip);
     next();
   } catch {
+    res.set('Retry-After', '60');
     res.status(429).json({
       status: 'fail',
       message: 'Too many requests. Please try again after a minute.',
@@ -99,4 +92,4 @@ export const createServer = (container) => {
   });
 
   return app;
-};;
+};

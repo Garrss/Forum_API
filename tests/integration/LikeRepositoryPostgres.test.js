@@ -4,33 +4,39 @@ import { LikeRepositoryPostgres } from '../../src/Infrastructures/database/postg
 import crypto from 'crypto';
 
 describe('LikeRepositoryPostgres', () => {
-  // Generate a unique suffix for this test file (avoids collisions across parallel runs)
-  const uniqueSuffix = crypto.randomUUID().replace(/-/g, '');
-  const testUserId = `user-like-${uniqueSuffix}`;
-  const testThreadId = `thread-like-${uniqueSuffix}`;
-  const testCommentId = `comment-like-${uniqueSuffix}`;
-  const testLikeId = `like-${uniqueSuffix}`;
+  let testUserId, testThreadId, testCommentId, testLikeId;
 
-  beforeEach(async () => {
-    // Clean up any leftovers (just in case)
-    await pool.query('DELETE FROM comment_likes WHERE comment_id = $1', [
-      testCommentId,
+  const cleanup = async () => {
+    // Always delete in child-first order
+    // Use thread_id scope to catch any orphaned comments from prior failed runs
+    await pool.query(
+      'DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM comments WHERE thread_id = $1)',
+      [testThreadId],
+    );
+    await pool.query('DELETE FROM comments WHERE thread_id = $1', [
+      testThreadId,
     ]);
-    await pool.query('DELETE FROM comments WHERE id = $1', [testCommentId]);
     await pool.query('DELETE FROM threads WHERE id = $1', [testThreadId]);
     await pool.query('DELETE FROM users WHERE id = $1', [testUserId]);
+  };
 
-    // Insert user
+  beforeEach(async () => {
+    const uniqueSuffix = crypto.randomUUID().replace(/-/g, '');
+    testUserId = `user-like-${uniqueSuffix}`;
+    testThreadId = `thread-like-${uniqueSuffix}`;
+    testCommentId = `comment-like-${uniqueSuffix}`;
+    testLikeId = `like-${uniqueSuffix}`;
+
+    await cleanup();
+
     await pool.query(
       'INSERT INTO users(id, username, password, fullname) VALUES($1, $2, $3, $4)',
       [testUserId, `likeuser-${uniqueSuffix}`, 'hashed', 'Like User'],
     );
-    // Insert thread
     await pool.query(
       'INSERT INTO threads(id, title, body, owner) VALUES($1, $2, $3, $4)',
       [testThreadId, 'Like Thread', 'Body', testUserId],
     );
-    // Insert comment (required for foreign key)
     await pool.query(
       'INSERT INTO comments(id, thread_id, owner, content, is_delete) VALUES($1, $2, $3, $4, $5)',
       [testCommentId, testThreadId, testUserId, 'A comment', false],
@@ -38,12 +44,7 @@ describe('LikeRepositoryPostgres', () => {
   });
 
   afterEach(async () => {
-    await pool.query('DELETE FROM comment_likes WHERE comment_id = $1', [
-      testCommentId,
-    ]);
-    await pool.query('DELETE FROM comments WHERE id = $1', [testCommentId]);
-    await pool.query('DELETE FROM threads WHERE id = $1', [testThreadId]);
-    await pool.query('DELETE FROM users WHERE id = $1', [testUserId]);
+    await cleanup();
   });
 
   it('should return false when like does not exist', async () => {
