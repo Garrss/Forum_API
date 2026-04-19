@@ -8,10 +8,13 @@ import crypto from 'crypto';
 
 describe('ReplyRepositoryPostgres', () => {
   let testUserId, testThreadId, testCommentId;
-  const uniqueSuffix = crypto.randomUUID().replace(/-/g, '');
 
   beforeEach(async () => {
-    // Clean up any leftovers from previous tests
+    const uniqueSuffix = crypto.randomUUID().replace(/-/g, '');
+    testUserId = `user-reply-${uniqueSuffix}`;
+    testThreadId = `thread-reply-${uniqueSuffix}`;
+    testCommentId = `comment-reply-${uniqueSuffix}`;
+
     await pool.query('DELETE FROM replies WHERE comment_id = $1', [
       testCommentId,
     ]);
@@ -19,22 +22,14 @@ describe('ReplyRepositoryPostgres', () => {
     await pool.query('DELETE FROM threads WHERE id = $1', [testThreadId]);
     await pool.query('DELETE FROM users WHERE id = $1', [testUserId]);
 
-    // Create fresh IDs for this test suite
-    testUserId = `user-reply-${uniqueSuffix}`;
-    testThreadId = `thread-reply-${uniqueSuffix}`;
-    testCommentId = `comment-reply-${uniqueSuffix}`;
-
-    // Insert user
     await pool.query(
       'INSERT INTO users(id, username, password, fullname) VALUES($1, $2, $3, $4)',
       [testUserId, `replyuser-${uniqueSuffix}`, 'hashed', 'Reply User'],
     );
-    // Insert thread
     await pool.query(
       'INSERT INTO threads(id, title, body, owner) VALUES($1, $2, $3, $4)',
       [testThreadId, 'Reply Thread', 'Body', testUserId],
     );
-    // Insert comment (needed for replies foreign key)
     await pool.query(
       'INSERT INTO comments(id, thread_id, owner, content, is_delete) VALUES($1, $2, $3, $4, $5)',
       [testCommentId, testThreadId, testUserId, 'A comment', false],
@@ -42,7 +37,6 @@ describe('ReplyRepositoryPostgres', () => {
   });
 
   afterEach(async () => {
-    // Clean up all data after each test
     await pool.query('DELETE FROM replies WHERE comment_id = $1', [
       testCommentId,
     ]);
@@ -61,19 +55,61 @@ describe('ReplyRepositoryPostgres', () => {
   };
 
   it('should add reply and return id, content, owner', async () => {
-    const repo = new ReplyRepositoryPostgres();
-    const newReplyId = `reply-${crypto.randomUUID().replace(/-/g, '')}`;
-    const result = await repo.addReply({
-      id: newReplyId,
-      content: 'Another integration reply',
-      owner: testUserId,
-      commentId: testCommentId,
-    });
-    expect(result.id).toBe(newReplyId);
-    expect(result.content).toBe('Another integration reply');
-    expect(result.owner).toBe(testUserId);
-    // Clean up the added reply
-    await pool.query('DELETE FROM replies WHERE id = $1', [newReplyId]);
+    const uniqueSuffix = crypto.randomUUID().replace(/-/g, '');
+    const localUserId = `user-addreply-${uniqueSuffix}`;
+    const localThreadId = `thread-addreply-${uniqueSuffix}`;
+    const localCommentId = `comment-addreply-${uniqueSuffix}`;
+    let newReplyId;
+
+    try {
+      await pool.query(
+        'INSERT INTO users(id, username, password, fullname) VALUES($1, $2, $3, $4)',
+        [
+          localUserId,
+          `addreplyuser-${uniqueSuffix}`,
+          'hashed',
+          'Add Reply User',
+        ],
+      );
+      await pool.query(
+        'INSERT INTO threads(id, title, body, owner) VALUES($1, $2, $3, $4)',
+        [localThreadId, 'Add Reply Thread', 'Body', localUserId],
+      );
+      await pool.query(
+        'INSERT INTO comments(id, thread_id, owner, content, is_delete) VALUES($1, $2, $3, $4, $5)',
+        [
+          localCommentId,
+          localThreadId,
+          localUserId,
+          'Comment for addReply',
+          false,
+        ],
+      );
+
+      const repo = new ReplyRepositoryPostgres();
+      newReplyId = `reply-${crypto.randomUUID().replace(/-/g, '')}`;
+      const result = await repo.addReply({
+        id: newReplyId,
+        content: 'Another integration reply',
+        owner: localUserId,
+        commentId: localCommentId,
+      });
+
+      expect(result.id).toBe(newReplyId);
+      expect(result.content).toBe('Another integration reply');
+      expect(result.owner).toBe(localUserId);
+    } finally {
+      // Cleanup always runs, even if test throws
+      if (newReplyId) {
+        await pool.query('DELETE FROM replies WHERE id = $1', [newReplyId]);
+      }
+      await pool.query('DELETE FROM replies WHERE comment_id = $1', [
+        localCommentId,
+      ]);
+      await pool.query('DELETE FROM comments WHERE id = $1', [localCommentId]);
+      await pool.query('DELETE FROM threads WHERE id = $1', [localThreadId]);
+      await pool.query('DELETE FROM users WHERE id = $1', [localUserId]);
+    }
   });
 
   it('should not throw when reply exists', async () => {
@@ -106,14 +142,20 @@ describe('ReplyRepositoryPostgres', () => {
   });
 
   it('should soft delete reply', async () => {
-    const replyId = await insertReply();
+    const fixedReplyId = `reply-softdelete-${crypto.randomUUID().replace(/-/g, '')}`;
+    await pool.query(
+      'INSERT INTO replies(id, comment_id, owner, content, is_delete) VALUES($1, $2, $3, $4, $5)',
+      [fixedReplyId, testCommentId, testUserId, 'Integration reply', false],
+    );
     const repo = new ReplyRepositoryPostgres();
-    await repo.deleteReply(replyId);
+    await repo.deleteReply(fixedReplyId);
     const result = await pool.query(
       'SELECT is_delete FROM replies WHERE id = $1',
-      [replyId],
+      [fixedReplyId],
     );
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0].is_delete).toBe(true);
+    await pool.query('DELETE FROM replies WHERE id = $1', [fixedReplyId]);
   });
 
   it('should get replies by comment ids sorted by date asc', async () => {
