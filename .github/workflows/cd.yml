@@ -3,8 +3,8 @@ name: Continuous Deployment
 on:
   push:
     branches:
-      - master
       - main
+      - master
 
 jobs:
   deploy:
@@ -12,18 +12,23 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Deploy to AWS EC2
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/ubuntu/forum-api
+            cd /home/ubuntu/Forum_API
+
             git pull origin master
+
             npm install --production
+
             npm run migrate up
-            pm2 restart forum-api || pm2 start src/app.js --name forum-api
+
+            pm2 restart Forum_API || pm2 start src/app.js --name Forum_API
+
             pm2 save
