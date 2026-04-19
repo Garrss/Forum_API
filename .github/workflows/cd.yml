@@ -32,3 +32,4 @@ jobs:
             pm2 restart Forum_API || pm2 start src/app.js --name Forum_API
 
             pm2 save
+            
